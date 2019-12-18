@@ -63,14 +63,20 @@ namespace FlowCytometry
         private void CalculateAllFiles()
         {
             string[] files = Directory.GetFiles(fcsPath);
+
             string fcsChannel = "FSC1LG,Peak";
             string sscChannel = "SSCLG,Peak";
+
+/*            string fcsChannel = "BS1CH1; fsc1lg-H";
+            string sscChannel = "BS1CH4; ssclg-H";
+*/
             string filename = "";
             string path = "";
             DateTime start;
             DateTime end;
             double diff;
             string txtDatetime;
+
             foreach (string file in files)
             {
                 start = DateTime.Now;
@@ -94,6 +100,9 @@ namespace FlowCytometry
                 path = resPath + filename + "_1heat.png";
                 ResChart.SaveImage(path, ChartImageFormat.Png);
 
+                //meanshift = new Custom_Meanshift(totalData);
+                //meanshift.SetData(totalData);
+                //meanshift.CalculateKDE();
                 clusters = meanshift.CalculateCluster();
                 drawClusters();
                 path = resPath + filename + "_2final.png";
@@ -328,15 +337,15 @@ namespace FlowCytometry
             // Draw Gate3
             if (arrGate3Polygon != null)
             {
-                i = 1;
+                i = 0;
                 foreach (Polygon polygon in arrGate3Polygon)
                 {
-                    ResChart.Series.Add("Gate3-" + i);
-                    ResChart.Series["Gate3-" + i].Color = polygon.color;
-                    ResChart.Series["Gate3-" + i].ChartType = SeriesChartType.Line;
+                    ResChart.Series.Add("Gate:" + Global.CELL_NAME[i]);
+                    ResChart.Series["Gate:" + Global.CELL_NAME[i]].Color = polygon.color;
+                    ResChart.Series["Gate:" + Global.CELL_NAME[i]].ChartType = SeriesChartType.Line;
                     foreach (PointF point in polygon.poly)
                     {
-                        ResChart.Series["Gate3-" + i].Points.AddXY(point.X, point.Y);
+                        ResChart.Series["Gate:" + Global.CELL_NAME[i]].Points.AddXY(point.X, point.Y);
                     }
                     i++;
                 }
@@ -350,12 +359,13 @@ namespace FlowCytometry
                 return;
 
             int nCnt = meanshift.nGridCnt, x = 0, y = 0;
+            int nMarkerSize = Math.Max(ResChart.Width, ResChart.Height )/ nCnt + 1;
             ResChart.Series.Clear();
 
             ResChart.Series.Add("Heat");
             ResChart.Series["Heat"].ChartType = SeriesChartType.Point;
-            ResChart.Series["Heat"].MarkerSize = 8;
-            ResChart.Series["Heat"].MarkerStyle = MarkerStyle.Square;
+            ResChart.Series["Heat"].MarkerSize = nMarkerSize;
+            ResChart.Series["Heat"].MarkerStyle = MarkerStyle.Circle;
 
             double[] xy;
             int nIdx = 0;
@@ -475,15 +485,18 @@ namespace FlowCytometry
         {
             checkGateExist();
 
-            string FCS1_H = FCMeasurement.GetChannelName("FCS1peak", channelNomenclature);
+            string[] FCS1_H = new string[] { "FSC1LG,Peak", "BS1CH1; fsc1lg-H", "BS1CH1; fsc1lg-H"};
+            string[] SSC_H = new string[] { "SSCLG,Peak", "BS1CH2; ssclg-H", "BS1CH4; ssclg-H" };
+            string[] FSC1_A = new string[] { "FSC1LG,Area", "BS1CH1; fsc1lg-A", "BS1CH1; fsc1lg-A" };
+/*            string FCS1_H = FCMeasurement.GetChannelName("FCS1peak", channelNomenclature);
             string SSC_H = FCMeasurement.GetChannelName("SSCpeak", channelNomenclature);
             string FSC1_A = FCMeasurement.GetChannelName("FCS1area", channelNomenclature);
-
+*/
             arrGatePolygon = null;
             arrGate3Polygon = null;
             Global.diff3_enable = false;
 
-            if (FCS1_H == channel1 && SSC_H == channel2)
+            if (FCS1_H.Contains(channel1) && SSC_H.Contains(channel2))
             {
                 arrGatePolygon = FCMeasurement.loadPolygon(Path.Combine(gatePath, gate1));
                 arrGate3Polygon = FCMeasurement.loadPolygon(Path.Combine(gatePath, gate3));
@@ -498,8 +511,10 @@ namespace FlowCytometry
                     Global.CELL_CENTER[i] = Global.GetCentroid(arrGate3Polygon[i].poly);
                 }
                 Global.diff3_enable = true;
+                Global.T_Y_1 = (int)arrGate3Polygon[2].poly[0].Y;
+                Global.T_Y_2 = (int)arrGate3Polygon[0].poly[0].Y;
             } 
-            else if (FSC1_A == channel1 && FCS1_H == channel2)
+            else if (FSC1_A.Contains(channel1) && FCS1_H.Contains(channel2))
             {
                 arrGatePolygon = FCMeasurement.loadPolygon(Path.Combine(gatePath, gate2));
             }
@@ -525,7 +540,7 @@ namespace FlowCytometry
             btnKDEHeat.Enabled = false;
             if (meanshift == null)
                 return;
-            meanshift.DisableCalResult();
+            meanshift.DisableCalcResult();
         }
 
         private void button1_Click(object sender, EventArgs e)

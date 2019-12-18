@@ -12,10 +12,12 @@ namespace FlowCytometry
     class Global
     {
         public const int LEFT_BOTTOM_T = 2100;
-        public static string[] CELL_NAME = new string[] { "Lymphocytes", "Monocytes", "Neutrophils" };
+        public static string[] CELL_NAME = new string[] { "Neutrophils", "Lymphocytes", "Monocytes"};
         public static PointF[] CELL_CENTER = new PointF[3];      // centers of polygon
         public static MarkerStyle[] CELL_MARKER = new MarkerStyle[] { MarkerStyle.Diamond, MarkerStyle.Cross, MarkerStyle.Triangle };
         public static bool diff3_enable; // true when diff3 is enabled, i.e FCS-H : SSC:H (Channel)
+        public static int T_Y_1 = 0;
+        public static int T_Y_2 = 0;
         public static PointF GetCentroid(PointF[] poly)
         {
             float accumulatedArea = 0.0f;
